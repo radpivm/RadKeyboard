@@ -1,0 +1,6 @@
+{
+  "name": "Radkeyboard v1.0",
+  "description": "A customizable keyboard with clipboard integration, app shortcuts, and emerald-themed precision controls.",
+  "requestFramePermissions": ["clipboard-read", "clipboard-write"],
+  "majorCapabilities": []
+}
