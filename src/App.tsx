@@ -13,6 +13,7 @@ import {
   Plus,
   ExternalLink,
   ChevronUp,
+  ChevronDown,
   X,
   ArrowRightToLine,
   Copy,
@@ -31,6 +32,7 @@ import { GoogleGenAI } from "@google/genai";
 // --- Types ---
 type Theme = 'onyx' | 'material-dark' | 'material-light' | 'oled' | 'pastel-pink';
 type KeyboardLayout = 'QWERTY' | 'AZERTY' | 'DVORAK';
+type KeyboardSize = 'small' | 'medium' | 'large';
 
 interface AppShortcut {
   id: string;
@@ -151,6 +153,7 @@ export default function App() {
   const [isShift, setIsShift] = useState(false);
   const [theme, setTheme] = useState<Theme>('onyx');
   const [layout, setLayout] = useState<KeyboardLayout>('QWERTY');
+  const [keyboardSize, setKeyboardSize] = useState<KeyboardSize>('medium');
   const [showSettings, setShowSettings] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
   const [showClipboard, setShowClipboard] = useState(false);
@@ -172,6 +175,25 @@ export default function App() {
   
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const currentTheme = THEMES[theme];
+
+  const addShortcut = () => {
+    setShortcuts([...shortcuts, { id: Date.now().toString(), name: 'New App', url: 'https://' }]);
+  };
+
+  const deleteShortcut = (id: string) => {
+    setShortcuts(shortcuts.filter(s => s.id !== id));
+  };
+
+  const moveShortcut = (index: number, direction: -1 | 1) => {
+    const newShortcuts = [...shortcuts];
+    const targetIndex = index + direction;
+    if (targetIndex >= 0 && targetIndex < newShortcuts.length) {
+      const temp = newShortcuts[index];
+      newShortcuts[index] = newShortcuts[targetIndex];
+      newShortcuts[targetIndex] = temp;
+      setShortcuts(newShortcuts);
+    }
+  };
 
   // Keep focus and handle cursor
   useEffect(() => {
@@ -394,342 +416,366 @@ export default function App() {
   };
 
   return (
-    <div className={`fixed inset-0 flex flex-col font-sans selection:bg-[#10b981]/30 ${currentTheme.bg}`}>
-      {/* Simulation Frame Header */}
-      <div className={`p-6 flex items-center justify-between border-b ${theme === 'onyx' ? 'border-white/5' : 'border-black/5'}`}>
-        <div className="flex flex-col">
-          <h1 className={`text-3xl font-light tracking-tight font-serif ${currentTheme.inputText}`}>
-            Radkeyboard<span className="text-[#10b981] italic"> v1.0</span>
-          </h1>
-          <p className="text-[#71717a] text-[10px] uppercase tracking-[0.2em] font-medium">Professional Android Input Method</p>
-        </div>
-        <button 
-          onClick={() => setShowSettings(true)}
-          className={`p-2.5 rounded-full transition-all flex items-center justify-center ${currentTheme.specialKey} ${currentTheme.keyText} border border-white/5 hover:border-[#10b981]/50 shadow-lg`}
+    <div className={`fixed inset-0 flex flex-col font-sans selection:bg-[#10b981]/30 transition-all duration-700 ${currentTheme.bg}`}>
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={theme}
+          initial={{ opacity: 0.8 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0.8 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="flex-1 flex flex-col"
         >
-          <Settings className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Main Content Area (Input Field) */}
-      <main className="flex-1 p-6 flex flex-col gap-4 overflow-hidden items-center justify-center">
-        <div className={`w-full max-w-2xl flex-1 rounded-[32px] p-8 ${currentTheme.inputBg} border border-white/5 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden`}>
-           {/* Sophisticated Background Element */}
-           <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <textarea
-            ref={inputRef}
-            className={`w-full h-full bg-transparent resize-none outline-none text-2xl font-light leading-relaxed font-serif italic ${currentTheme.inputText} placeholder:opacity-20`}
-            placeholder="Type with intention..."
-            value={text}
-            onChange={(e) => {
-              pushHistory(e.target.value, e.target.selectionStart);
-            }}
-            onSelect={(e) => {
-              setCursorPos((e.target as HTMLTextAreaElement).selectionStart);
-            }}
-          />
-          {/* Animated Cursor Hint */}
-          {text.length === 0 && (
-            <div className="absolute inset-x-8 top-8 pointer-events-none opacity-40">
-              <div className={`w-0.5 h-8 animate-pulse ${currentTheme.accent}`} />
+          {/* Simulation Frame Header */}
+          <div className={`p-6 flex items-center justify-between border-b transition-all duration-500 ${theme === 'onyx' ? 'border-white/5' : 'border-black/5'}`}>
+            <div className="flex flex-col">
+              <h1 className={`text-3xl font-light tracking-tight font-serif transition-colors duration-500 ${currentTheme.inputText}`}>
+                Radkeyboard<span className="text-[#10b981] italic"> v1.0</span>
+              </h1>
+              <p className="text-[#71717a] text-[10px] uppercase tracking-[0.2em] font-medium">Professional Android Input Method</p>
             </div>
-          )}
-        </div>
-      </main>
-
-      {/* KEYBOARD SECTION */}
-      <div className={`w-full max-w-3xl mx-auto rounded-t-[48px] shadow-[0_-40px_100px_-20px_rgba(0,0,0,0.6)] overflow-hidden border-t border-white/5 ${theme === 'onyx' ? 'bg-[#111111]' : currentTheme.bg}`}>
-        
-        {/* TOP ROW: Specialty Buttons */}
-        <div className={`flex items-center gap-1.5 p-3 ${theme === 'onyx' ? 'bg-[#111111]' : currentTheme.topBar} border-b border-white/5 overflow-x-auto no-scrollbar`}>
-          <div className="flex gap-1.5 shrink-0">
-            <TopRowButton 
-              onClick={() => handleKeyPress('\t')} 
-              icon={<ArrowRightToLine className="w-3.5 h-3.5" />} 
-              label="Tab" 
-              theme={currentTheme} 
-              onyx={theme === 'onyx'} 
-            />
-            <TopRowButton 
-              onClick={() => setIsCtrl(!isCtrl)} 
-              icon={<Command className="w-3.5 h-3.5" />} 
-              label="Ctrl" 
-              theme={currentTheme} 
-              onyx={theme === 'onyx'} 
-              active={isCtrl}
-            />
-            <TopRowButton 
-              onClick={handleSelectAll} 
-              icon={<MousePointer2 className="w-3.5 h-3.5" />} 
-              label="Select All" 
-              theme={currentTheme} 
-              onyx={theme === 'onyx'} 
-            />
-            <TopRowButton 
-              onClick={handleCopy} 
-              icon={<Copy className="w-3.5 h-3.5" />} 
-              label="Copy" 
-              theme={currentTheme} 
-              onyx={theme === 'onyx'} 
-            />
-            <TopRowButton 
-              onClick={handlePaste} 
-              icon={<ClipboardPaste className="w-3.5 h-3.5" />} 
-              label="Paste" 
-              theme={currentTheme} 
-              onyx={theme === 'onyx'} 
-            />
-            <TopRowButton 
-              onClick={() => setShowClipboard(!showClipboard)} 
-              icon={<History className="w-3.5 h-3.5" />} 
-              label="History" 
-              theme={currentTheme} 
-              onyx={theme === 'onyx'} 
-              active={showClipboard}
-            />
-          </div>
-          
-          <div className="h-4 w-px bg-white/10 mx-1 shrink-0" />
-          
-          <div className="flex gap-1.5 shrink-0">
-            {shortcuts.map((s) => (
-              <motion.button
-                key={s.id}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => openLink(s.url)}
-                className={`w-12 h-10 rounded-lg flex items-center justify-center transition-all ${currentTheme.specialKey} border border-white/5 opacity-40 hover:opacity-100 hover:bg-white/[0.03]`}
-              >
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center ${s.name === 'Google' ? 'bg-blue-500/10' : 'bg-green-500/10'}`}>
-                   <div className={`w-2 h-2 rounded-sm ${s.name === 'Google' ? 'bg-blue-400' : 'bg-green-400'}`} />
-                </div>
-              </motion.button>
-            ))}
-
-            <motion.button
-              whileTap={{ scale: 0.98 }}
+            <button 
               onClick={() => setShowSettings(true)}
-              className={`w-10 h-10 rounded-lg flex items-center justify-center ${currentTheme.specialKey} text-[#71717a] border border-white/5`}
+              className={`p-2.5 rounded-full transition-all duration-500 flex items-center justify-center ${currentTheme.specialKey} ${currentTheme.keyText} border border-white/5 hover:border-[#10b981]/50 shadow-lg`}
             >
-              <Plus className="w-4 h-4" />
-            </motion.button>
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
-        </div>
 
-        {/* PREDICTION BAR */}
-        <div className={`flex items-center justify-center gap-2 p-2 px-3 border-b border-white/5 ${theme === 'onyx' ? 'bg-[#151515]' : currentTheme.topBar} min-h-[44px]`}>
-          <AnimatePresence>
-            {predictions.map((p, idx) => (
-              <motion.button
-                key={idx}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                onClick={() => applyPrediction(p)}
-                className={`flex-1 max-w-[120px] py-1.5 px-3 rounded-lg text-sm font-medium transition-colors ${currentTheme.specialKey} border border-white/5 hover:bg-white/10 ${currentTheme.keyText}`}
-              >
-                {p}
-              </motion.button>
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {/* CLIPBOARD HISTORY POPUP */}
-        <AnimatePresence>
-          {showClipboard && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-[#1a1a1a] border-b border-white/5 overflow-hidden"
-            >
-              <div className="p-4 flex flex-col gap-2">
-                <h4 className="text-[10px] uppercase tracking-widest text-[#71717a] font-bold mb-1">Recent Clips</h4>
-                {clipboardHistory.length === 0 ? (
-                  <p className="text-xs text-[#71717a] italic p-2">History is empty...</p>
-                ) : (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                    {clipboardHistory.map((clip, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          const newText = text.slice(0, cursorPos) + clip + text.slice(cursorPos);
-                          setText(newText);
-                          setCursorPos(cursorPos + clip.length);
-                          setShowClipboard(false);
-                        }}
-                        className="bg-[#252525] border border-white/5 rounded-lg px-3 py-2 text-xs text-white max-w-[150px] truncate shrink-0 hover:border-[#10b981]/50"
-                      >
-                        {clip}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showTranslateMenu && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-[#1a1a1a] border-b border-white/5 overflow-hidden"
-            >
-              <div className="p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] uppercase tracking-widest text-[#71717a] font-bold">Select Target Language</h4>
-                  <button onClick={() => setShowTranslateMenu(false)} className="text-[#10b981] text-[10px] font-bold uppercase">Done</button>
-                </div>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                  {TRANSLATION_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setTargetLanguage(lang)}
-                      className={`px-4 py-2 rounded-lg text-xs font-medium transition-all shrink-0 ${targetLanguage === lang ? 'bg-[#10b981] text-black' : 'bg-[#252525] text-white hover:bg-[#333]'}`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* MAIN KEYS or EMOJI VIEW */}
-        <div className="p-2.5 pb-6 flex flex-col gap-1.5 keyboard-grid min-h-[220px]">
-          {showEmojis ? (
-            <div className="flex flex-col gap-2 h-full">
-               <div className="flex items-center justify-between px-2 mb-1">
-                 <span className="text-[10px] uppercase tracking-widest text-[#71717a] font-bold">Frequently Used</span>
-                 <button 
-                  onClick={() => setShowEmojis(false)}
-                  className={`text-[10px] uppercase font-bold text-[#10b981]`}
-                 >
-                   Back to keys
-                 </button>
-               </div>
-               <div className="grid grid-cols-8 gap-1 overflow-y-auto max-h-[160px] no-scrollbar">
-                 {EMOJI_LIST.map((emoji, i) => (
-                   <motion.button
-                    key={i}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleKeyPress(emoji)}
-                    className="h-12 flex items-center justify-center text-2xl hover:bg-white/5 rounded-lg transition-colors"
-                   >
-                     {emoji}
-                   </motion.button>
-                 ))}
-               </div>
-            </div>
-          ) : (
-            <>
-              {LAYOUTS[layout].map((row, i) => (
-                <div key={i} className="flex gap-1.5 justify-center">
-                  {row.map((item) => {
-                    const isSpecial = ['SHIFT', 'BACKSPACE'].includes(item);
-                    return (
-                      <Key
-                        key={item}
-                        label={item}
-                        theme={currentTheme}
-                        isSpecial={isSpecial}
-                        isShift={isShift}
-                        onClick={() => handleKeyPress(item)}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
+          {/* Main Content Area (Input Field) */}
+          <main className="flex-1 p-6 flex flex-col gap-4 overflow-hidden items-center justify-center">
+            <div className={`w-full max-w-2xl flex-1 rounded-[32px] p-8 transition-all duration-500 ${currentTheme.inputBg} border border-white/5 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden`}>
+               {/* Sophisticated Background Element */}
+               <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none" />
               
-              {/* Legend/Number Row Toggle */}
-              <div className="flex gap-1.5 justify-center">
-                <Key label="?123" theme={currentTheme} isSpecial onClick={() => {}} className="grow-[1.5] text-[10px] tracking-widest font-bold" />
-                <Key label="," theme={currentTheme} onClick={() => handleKeyPress(',')} />
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => handleKeyPress(' ')}
-                  className={`grow-[6] h-12 rounded-lg flex items-center justify-center text-[10px] tracking-[0.3em] font-bold uppercase transition-all shadow-sm ${theme === 'onyx' ? 'bg-[#2a2a2a] text-[#71717a] border border-white/5' : currentTheme.key + ' ' + currentTheme.keyText} hover:brightness-110 active:brightness-95`}
-                >
-                  {theme === 'onyx' ? 'Onyx' : 'Space'}
-                </motion.button>
-                <Key label="." theme={currentTheme} onClick={() => handleKeyPress('.')} />
-                <Key 
-                  label={translatedText ? "SEND" : "ENTER"} 
+              <textarea
+                ref={inputRef}
+                className={`w-full h-full bg-transparent resize-none outline-none text-2xl font-light leading-relaxed font-serif italic transition-colors duration-500 ${currentTheme.inputText} placeholder:opacity-20`}
+                placeholder="Type with intention..."
+                value={text}
+                onChange={(e) => {
+                  pushHistory(e.target.value, e.target.selectionStart);
+                }}
+                onSelect={(e) => {
+                  setCursorPos((e.target as HTMLTextAreaElement).selectionStart);
+                }}
+              />
+              {/* Animated Cursor Hint */}
+              {text.length === 0 && (
+                <div className="absolute inset-x-8 top-8 pointer-events-none opacity-40">
+                  <div className={`w-0.5 h-8 animate-pulse transition-colors duration-500 ${currentTheme.accent}`} />
+                </div>
+              )}
+            </div>
+          </main>
+
+          {/* KEYBOARD SECTION */}
+          <div 
+            className={`w-full max-w-3xl mx-auto rounded-t-[48px] shadow-[0_-40px_100px_-20px_rgba(0,0,0,0.6)] overflow-hidden border-t border-white/5 transition-all duration-700 ${theme === 'onyx' ? 'bg-[#111111]' : currentTheme.bg}`}
+            style={{
+              '--key-h': keyboardSize === 'small' ? '40px' : keyboardSize === 'large' ? '56px' : '48px',
+              '--key-text': keyboardSize === 'small' ? '12px' : keyboardSize === 'large' ? '16px' : '14px',
+              '--top-row-h': keyboardSize === 'small' ? '32px' : keyboardSize === 'large' ? '48px' : '40px',
+            } as React.CSSProperties}
+          >
+            
+            {/* TOP ROW: Specialty Buttons */}
+            <div className={`flex items-center gap-1.5 p-3 transition-all duration-500 ${theme === 'onyx' ? 'bg-[#111111]' : currentTheme.topBar} border-b border-white/5 overflow-x-auto no-scrollbar`}>
+              <div className="flex gap-1.5 shrink-0">
+                <TopRowButton 
+                  onClick={() => handleKeyPress('\t')} 
+                  icon={<ArrowRightToLine className="w-3.5 h-3.5" />} 
+                  label="Tab" 
                   theme={currentTheme} 
-                  isSpecial 
-                  onClick={() => handleKeyPress('ENTER')} 
-                  className={`grow-[1.5] ${theme === 'onyx' ? '!bg-[#10b981] !text-black' : ''} relative`}
-                >
-                   {isTranslating ? (
-                     <Loader2 className="w-5 h-5 animate-spin" />
-                   ) : translatedText ? (
-                     <Send className="w-5 h-5" />
-                   ) : (
-                     <CornerDownLeft className="w-5 h-5" />
-                   )}
-                </Key>
+                  onyx={theme === 'onyx'} 
+                />
+                <TopRowButton 
+                  onClick={() => setIsCtrl(!isCtrl)} 
+                  icon={<Command className="w-3.5 h-3.5" />} 
+                  label="Ctrl" 
+                  theme={currentTheme} 
+                  onyx={theme === 'onyx'} 
+                  active={isCtrl}
+                />
+                <TopRowButton 
+                  onClick={handleSelectAll} 
+                  icon={<MousePointer2 className="w-3.5 h-3.5" />} 
+                  label="Select All" 
+                  theme={currentTheme} 
+                  onyx={theme === 'onyx'} 
+                />
+                <TopRowButton 
+                  onClick={handleCopy} 
+                  icon={<Copy className="w-3.5 h-3.5" />} 
+                  label="Copy" 
+                  theme={currentTheme} 
+                  onyx={theme === 'onyx'} 
+                />
+                <TopRowButton 
+                  onClick={handlePaste} 
+                  icon={<ClipboardPaste className="w-3.5 h-3.5" />} 
+                  label="Paste" 
+                  theme={currentTheme} 
+                  onyx={theme === 'onyx'} 
+                />
+                <TopRowButton 
+                  onClick={() => setShowClipboard(!showClipboard)} 
+                  icon={<History className="w-3.5 h-3.5" />} 
+                  label="History" 
+                  theme={currentTheme} 
+                  onyx={theme === 'onyx'} 
+                  active={showClipboard}
+                />
               </div>
-            </>
-          )}
-
-          {/* BOTTOM ROW: Arrows & Navigation */}
-          <div className="flex gap-2 justify-center mt-3 border-t border-white/5 pt-4">
-             <div className="flex gap-2 items-center w-full px-2 overflow-x-auto no-scrollbar">
-                <ArrowKey icon={<Undo2 className="w-5 h-5"/>} onClick={undo} theme={currentTheme} />
-                <ArrowKey icon={<Redo2 className="w-5 h-5"/>} onClick={redo} theme={currentTheme} />
-                
-                <div className="w-px h-6 bg-white/5 mx-2 shrink-0" />
-
-                <ArrowKey icon={<ArrowLeft className="w-5 h-5"/>} onClick={() => moveCursor('left')} theme={currentTheme} />
-                <ArrowKey icon={<ArrowUp className="w-5 h-5"/>} onClick={() => moveCursor('up')} theme={currentTheme} />
-                <ArrowKey icon={<ArrowDown className="w-5 h-5"/>} onClick={() => moveCursor('down')} theme={currentTheme} />
-                <ArrowKey icon={<ArrowRight className="w-5 h-5"/>} onClick={() => moveCursor('right')} theme={currentTheme} />
-                
-                <div className="w-px h-6 bg-white/5 mx-2 shrink-0" />
-                
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={toggleLayout}
-                  className={`flex-1 h-12 rounded-xl flex items-center justify-center ${currentTheme.specialKey} border border-white/5 text-[#71717a] hover:text-white transition-all`}
-                >
-                  <Globe className="w-5 h-5" />
-                  <span className="text-[8px] font-bold absolute -bottom-1 uppercase opacity-40">{layout}</span>
-                </motion.button>
+              
+              <div className="h-4 w-px bg-white/10 mx-1 shrink-0" />
+              
+              <div className="flex gap-1.5 shrink-0">
+                {shortcuts.map((s) => (
+                  <motion.button
+                    key={s.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => openLink(s.url)}
+                    className={`w-12 h-10 rounded-lg flex items-center justify-center transition-all duration-500 ${currentTheme.specialKey} border border-white/5 opacity-40 hover:opacity-100 hover:bg-white/[0.03]`}
+                  >
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center ${s.name === 'Google' ? 'bg-blue-500/10' : 'bg-green-500/10'}`}>
+                       <div className={`w-2 h-2 rounded-sm ${s.name === 'Google' ? 'bg-blue-400' : 'bg-green-400'}`} />
+                    </div>
+                  </motion.button>
+                ))}
 
                 <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleToggleTranslate}
-                  className={`flex-1 h-12 rounded-xl flex items-center justify-center ${currentTheme.specialKey} border border-white/5 transition-colors ${isTranslateEnabled ? 'text-[#10b981] bg-[#10b981]/10 border-[#10b981]/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'text-[#71717a] hover:text-white'}`}
-                >
-                  <Languages className="w-5 h-5" />
-                </motion.button>
-
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowEmojis(!showEmojis)}
-                  className={`flex-1 h-12 rounded-xl flex items-center justify-center ${currentTheme.specialKey} border border-white/5 transition-colors ${showEmojis ? 'text-[#10b981] bg-[#10b981]/10 border-[#10b981]/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'text-[#71717a] hover:text-white'}`}
-                >
-                  <Smile className="w-5 h-5" />
-                </motion.button>
-
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setShowSettings(true)}
-                  className={`flex-1 h-12 rounded-xl flex items-center justify-center ${currentTheme.specialKey} text-[#71717a] border border-white/5 hover:text-white transition-colors`}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-500 ${currentTheme.specialKey} text-[#71717a] border border-white/5`}
                 >
-                  <Globe className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                 </motion.button>
-             </div>
+              </div>
+            </div>
+
+            {/* PREDICTION BAR */}
+            <div className={`flex items-center justify-center gap-2 p-2 px-3 border-b border-white/5 transition-all duration-500 ${theme === 'onyx' ? 'bg-[#151515]' : currentTheme.topBar} min-h-[44px]`}>
+              <AnimatePresence>
+                {predictions.map((p, idx) => (
+                  <motion.button
+                    key={idx}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    onClick={() => applyPrediction(p)}
+                    className={`flex-1 max-w-[120px] py-1.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${currentTheme.specialKey} border border-white/5 hover:bg-white/10 ${currentTheme.keyText}`}
+                  >
+                    {p}
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* CLIPBOARD HISTORY POPUP */}
+            <AnimatePresence>
+              {showClipboard && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="bg-[#1a1a1a] border-b border-white/5 overflow-hidden"
+                >
+                  <div className="p-4 flex flex-col gap-2">
+                    <h4 className="text-[10px] uppercase tracking-widest text-[#71717a] font-bold mb-1">Recent Clips</h4>
+                    {clipboardHistory.length === 0 ? (
+                      <p className="text-xs text-[#71717a] italic p-2">History is empty...</p>
+                    ) : (
+                      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                        {clipboardHistory.map((clip, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              const newText = text.slice(0, cursorPos) + clip + text.slice(cursorPos);
+                              setText(newText);
+                              setCursorPos(cursorPos + clip.length);
+                              setShowClipboard(false);
+                            }}
+                            className="bg-[#252525] border border-white/5 rounded-lg px-3 py-2 text-xs text-white max-w-[150px] truncate shrink-0 hover:border-[#10b981]/50 transition-all"
+                          >
+                            {clip}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showTranslateMenu && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="bg-[#1a1a1a] border-b border-white/5 overflow-hidden"
+                >
+                  <div className="p-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] uppercase tracking-widest text-[#71717a] font-bold">Select Target Language</h4>
+                      <button onClick={() => setShowTranslateMenu(false)} className="text-[#10b981] text-[10px] font-bold uppercase">Done</button>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                      {TRANSLATION_LANGUAGES.map((lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => setTargetLanguage(lang)}
+                          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all shrink-0 ${targetLanguage === lang ? 'bg-[#10b981] text-black' : 'bg-[#252525] text-white hover:bg-[#333]'}`}
+                        >
+                          {lang}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* MAIN KEYS or EMOJI VIEW */}
+            <div className="p-2.5 pb-6 flex flex-col gap-1.5 keyboard-grid min-h-[220px]">
+              {showEmojis ? (
+                <div className="flex flex-col gap-2 h-full">
+                   <div className="flex items-center justify-between px-2 mb-1">
+                     <span className="text-[10px] uppercase tracking-widest text-[#71717a] font-bold">Frequently Used</span>
+                     <button 
+                      onClick={() => setShowEmojis(false)}
+                      className={`text-[10px] uppercase font-bold text-[#10b981]`}
+                     >
+                       Back to keys
+                     </button>
+                   </div>
+                     <div className="grid grid-cols-8 gap-1 overflow-y-auto max-h-[160px] no-scrollbar">
+                       {EMOJI_LIST.map((emoji, i) => (
+                         <motion.button
+                          key={i}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleKeyPress(emoji)}
+                          className="flex items-center justify-center hover:bg-white/5 rounded-lg transition-colors"
+                          style={{ height: 'var(--key-h, 48px)', fontSize: 'calc(var(--key-text, 14px) * 1.5)' }}
+                         >
+                           {emoji}
+                         </motion.button>
+                       ))}
+                     </div>
+                </div>
+              ) : (
+                <>
+                  {LAYOUTS[layout].map((row, i) => (
+                    <div key={i} className="flex gap-1.5 justify-center">
+                      {row.map((item) => {
+                        const isSpecial = ['SHIFT', 'BACKSPACE'].includes(item);
+                        return (
+                          <Key
+                            key={item}
+                            label={item}
+                            theme={currentTheme}
+                            isSpecial={isSpecial}
+                            isShift={isShift}
+                            onClick={() => handleKeyPress(item)}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                  
+                  {/* Legend/Number Row Toggle */}
+                  <div className="flex gap-1.5 justify-center">
+                    <Key label="?123" theme={currentTheme} isSpecial onClick={() => {}} className="grow-[1.5] text-[10px] tracking-widest font-bold" />
+                    <Key label="," theme={currentTheme} onClick={() => handleKeyPress(',')} />
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => handleKeyPress(' ')}
+                      className={`grow-[6] rounded-lg flex items-center justify-center tracking-[0.3em] font-bold uppercase transition-all shadow-sm ${theme === 'onyx' ? 'bg-[#2a2a2a] text-[#71717a] border border-white/5' : currentTheme.key + ' ' + currentTheme.keyText} hover:brightness-110 active:brightness-95 duration-500`}
+                      style={{ height: 'var(--key-h, 48px)', fontSize: 'var(--key-text, 10px)' }}
+                    >
+                      {theme === 'onyx' ? 'Onyx' : 'Space'}
+                    </motion.button>
+                    <Key label="." theme={currentTheme} onClick={() => handleKeyPress('.')} />
+                    <Key 
+                      label={translatedText ? "SEND" : "ENTER"} 
+                      theme={currentTheme} 
+                      isSpecial 
+                      onClick={() => handleKeyPress('ENTER')} 
+                      className={`grow-[1.5] transition-all duration-500 ${theme === 'onyx' ? '!bg-[#10b981] !text-black' : ''} relative`}
+                    >
+                       {isTranslating ? (
+                         <Loader2 className="w-5 h-5 animate-spin" />
+                       ) : translatedText ? (
+                         <Send className="w-5 h-5" />
+                       ) : (
+                         <CornerDownLeft className="w-5 h-5" />
+                       )}
+                    </Key>
+                  </div>
+                </>
+              )}
+
+              {/* BOTTOM ROW: Arrows & Navigation */}
+              <div className="flex gap-2 justify-center mt-3 border-t border-white/5 pt-4 transition-colors duration-500">
+                 <div className="flex gap-2 items-center w-full px-2 overflow-x-auto no-scrollbar">
+                    <ArrowKey icon={<Undo2 className="w-5 h-5"/>} onClick={undo} theme={currentTheme} />
+                    <ArrowKey icon={<Redo2 className="w-5 h-5"/>} onClick={redo} theme={currentTheme} />
+                    
+                    <div className="w-px h-6 bg-white/5 mx-2 shrink-0 transition-colors duration-500" />
+
+                    <ArrowKey icon={<ArrowLeft className="w-5 h-5"/>} onClick={() => moveCursor('left')} theme={currentTheme} />
+                    <ArrowKey icon={<ArrowUp className="w-5 h-5"/>} onClick={() => moveCursor('up')} theme={currentTheme} />
+                    <ArrowKey icon={<ArrowDown className="w-5 h-5"/>} onClick={() => moveCursor('down')} theme={currentTheme} />
+                    <ArrowKey icon={<ArrowRight className="w-5 h-5"/>} onClick={() => moveCursor('right')} theme={currentTheme} />
+                    
+                    <div className="w-px h-6 bg-white/5 mx-2 shrink-0 transition-colors duration-500" />
+                    
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={toggleLayout}
+                      className={`flex-1 rounded-xl flex items-center justify-center transition-all duration-500 ${currentTheme.specialKey} border border-white/5 text-[#71717a] hover:text-white transition-all relative`}
+                      style={{ height: 'var(--key-h, 48px)' }}
+                    >
+                      <Globe className="w-5 h-5" />
+                      <span className="text-[8px] font-bold absolute -bottom-1 uppercase opacity-40">{layout}</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleToggleTranslate}
+                      className={`flex-1 rounded-xl flex items-center justify-center transition-all duration-500 ${currentTheme.specialKey} border border-white/5 transition-colors ${isTranslateEnabled ? 'text-[#10b981] bg-[#10b981]/10 border-[#10b981]/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'text-[#71717a] hover:text-white'}`}
+                      style={{ height: 'var(--key-h, 48px)' }}
+                    >
+                      <Languages className="w-5 h-5" />
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowEmojis(!showEmojis)}
+                      className={`flex-1 rounded-xl flex items-center justify-center transition-all duration-500 ${currentTheme.specialKey} border border-white/5 transition-colors ${showEmojis ? 'text-[#10b981] bg-[#10b981]/10 border-[#10b981]/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'text-[#71717a] hover:text-white'}`}
+                      style={{ height: 'var(--key-h, 48px)' }}
+                    >
+                      <Smile className="w-5 h-5" />
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowSettings(true)}
+                      className={`flex-1 rounded-xl flex items-center justify-center transition-all duration-500 ${currentTheme.specialKey} text-[#71717a] border border-white/5 hover:text-white transition-colors`}
+                      style={{ height: 'var(--key-h, 48px)' }}
+                    >
+                      <Globe className="w-5 h-5" />
+                    </motion.button>
+                 </div>
+              </div>
+              
+              {/* Home Indicator */}
+              <div className="w-24 h-1 bg-white/10 mx-auto mt-4 rounded-full transition-colors duration-500" />
+            </div>
           </div>
-          
-          {/* Home Indicator */}
-          <div className="w-24 h-1 bg-white/10 mx-auto mt-4 rounded-full" />
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* SETTINGS OVERLAY */}
       <AnimatePresence>
@@ -755,26 +801,45 @@ export default function App() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-12 flex-1 overflow-auto pb-32">
-                <section>
-                  <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-6 opacity-30 ${currentTheme.inputText}`}>Appearance</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    {(Object.keys(THEMES) as Theme[]).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setTheme(t)}
-                        className={`p-6 rounded-2xl border transition-all flex items-center justify-between ${
-                          theme === t ? 'border-[#10b981] bg-[#10b981]/5' : 'border-white/5 hover:bg-white/[0.02]'
-                        } ${THEMES[t].bg}`}
-                      >
-                        <span className={`text-sm font-medium tracking-tight ${THEMES[t].keyText}`}>{t.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
-                        <div className="flex gap-2">
-                          <div className={`w-3 h-3 rounded-full ${THEMES[t].accent}`} />
-                          <div className={`w-3 h-3 rounded-full ${THEMES[t].specialKey}`} />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                <div className="space-y-12">
+                  <section>
+                    <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-6 opacity-30 ${currentTheme.inputText}`}>Appearance</h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      {(Object.keys(THEMES) as Theme[]).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setTheme(t)}
+                          className={`p-6 rounded-2xl border transition-all flex items-center justify-between ${
+                            theme === t ? 'border-[#10b981] bg-[#10b981]/5' : 'border-white/5 hover:bg-white/[0.02]'
+                          } ${THEMES[t].bg}`}
+                        >
+                          <span className={`text-sm font-medium tracking-tight ${THEMES[t].keyText}`}>{t.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+                          <div className="flex gap-2">
+                            <div className={`w-3 h-3 rounded-full ${THEMES[t].accent}`} />
+                            <div className={`w-3 h-3 rounded-full ${THEMES[t].specialKey}`} />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-6 opacity-30 ${currentTheme.inputText}`}>Keyboard Size</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {(['small', 'medium', 'large'] as KeyboardSize[]).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setKeyboardSize(s)}
+                          className={`p-4 rounded-2xl border transition-all flex items-center justify-center ${
+                            keyboardSize === s ? 'border-[#10b981] bg-[#10b981]/10 text-[#10b981]' : `border-white/5 hover:bg-white/[0.02] ${currentTheme.keyText}`
+                          } ${currentTheme.specialKey}`}
+                        >
+                          <span className="text-xs uppercase tracking-widest font-bold">{s}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                </div>
 
                 <section>
                   <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-6 opacity-30 ${currentTheme.inputText}`}>Accelerator Shortcuts</h3>
@@ -782,11 +847,15 @@ export default function App() {
                     {shortcuts.map((s, idx) => (
                       <div key={s.id} className={`p-6 rounded-2xl ${currentTheme.specialKey} border border-white/5 flex flex-col gap-4 group transition-all hover:border-white/10`}>
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#10b981] text-xs font-serif italic`}>
+                          <div className="flex flex-col gap-1 mr-2">
+                            <button onClick={() => moveShortcut(idx, -1)} disabled={idx === 0} className="hover:text-white disabled:opacity-30 text-[#71717a]"><ChevronUp className="w-4 h-4" /></button>
+                            <button onClick={() => moveShortcut(idx, 1)} disabled={idx === shortcuts.length - 1} className="hover:text-white disabled:opacity-30 text-[#71717a]"><ChevronDown className="w-4 h-4" /></button>
+                          </div>
+                          <div className={`w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#10b981] text-xs font-serif italic shrink-0`}>
                             0{idx + 1}
                           </div>
                           <input 
-                            className={`flex-1 bg-transparent outline-none font-medium text-lg tracking-tight ${currentTheme.keyText}`}
+                            className={`flex-1 min-w-0 bg-transparent outline-none font-medium text-lg tracking-tight ${currentTheme.keyText}`}
                             value={s.name}
                             onChange={(e) => {
                               const next = [...shortcuts];
@@ -795,11 +864,14 @@ export default function App() {
                             }}
                             placeholder="App Name"
                           />
+                          <button onClick={() => deleteShortcut(s.id)} className="p-2 text-[#71717a] hover:text-red-500 transition-colors shrink-0">
+                            <Delete className="w-5 h-5"/>
+                          </button>
                         </div>
-                        <div className="flex items-center gap-2 pl-12">
-                          <ExternalLink className="w-3 h-3 text-[#10b981]/50" />
+                        <div className="flex items-center gap-2 pl-[5.5rem]">
+                          <ExternalLink className="w-3 h-3 text-[#10b981]/50 shrink-0" />
                           <input 
-                            className={`flex-1 bg-transparent outline-none text-xs text-[#71717a] tracking-tight`}
+                            className={`flex-1 min-w-0 bg-transparent outline-none text-xs text-[#71717a] tracking-tight`}
                             value={s.url}
                             onChange={(e) => {
                               const next = [...shortcuts];
@@ -811,6 +883,12 @@ export default function App() {
                         </div>
                       </div>
                     ))}
+                    <button 
+                      onClick={addShortcut} 
+                      className={`w-full py-4 rounded-xl border border-dashed border-white/20 text-[#71717a] hover:text-white hover:border-white/40 transition-colors flex items-center justify-center gap-2 mt-4`}
+                    >
+                      <Plus className="w-4 h-4" /> Add Shortcut
+                    </button>
                   </div>
                 </section>
               </div>
@@ -863,13 +941,17 @@ const Key: React.FC<KeyProps & { children?: React.ReactNode }> = ({ label, theme
       whileTap={{ scale: 0.94 }}
       onClick={onClick}
       className={`
-        h-12 min-w-[32px] flex-1 rounded-lg flex items-center justify-center 
-        text-sm font-medium transition-all border border-white/5
+        min-w-[32px] flex-1 rounded-lg flex items-center justify-center 
+        font-medium transition-all duration-300 border border-white/5
         ${isSpecial ? theme.specialKey : theme.key} 
         ${theme.keyText}
         hover:bg-white/[0.02] active:scale-95
         ${className}
       `}
+      style={{
+        height: 'var(--key-h, 48px)',
+        fontSize: 'var(--key-text, 14px)'
+      }}
     >
       {getIcon()}
     </motion.button>
@@ -882,9 +964,12 @@ function ArrowKey({ icon, onClick, theme }: { icon: React.ReactNode; onClick: ()
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
       className={`
-        w-12 h-10 flex-1 rounded-lg flex items-center justify-center 
-        ${theme.keyText} bg-white/[0.03] border border-white/5 hover:text-[#10b981] transition-colors
+        w-12 flex-1 rounded-lg flex items-center justify-center 
+        ${theme.keyText} bg-white/[0.03] border border-white/5 hover:text-[#10b981] transition-all duration-300
       `}
+      style={{
+        height: 'var(--top-row-h, 40px)'
+      }}
     >
       {icon}
     </motion.button>
@@ -897,12 +982,15 @@ function TopRowButton({ onClick, icon, label, theme, onyx, active }: { onClick: 
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={`
-        px-3 h-10 rounded-lg flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest transition-all shrink-0
+        px-3 rounded-lg flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest transition-all duration-300 shrink-0
         ${onyx ? (active ? 'bg-[#10b981]/20 border-[#10b981]/50 text-[#10b981]' : 'bg-[#1d1d1d] border-white/5 text-[#e0e0e0] hover:bg-white/[0.03]') : (active ? 'bg-[#10b981]/20' : theme.specialKey)}
         border hover:bg-white/[0.03] active:bg-white/[0.05]
       `}
+      style={{
+        height: 'var(--top-row-h, 40px)'
+      }}
     >
-      <div className={active ? 'text-[#10b981]' : 'opacity-60'}>{icon}</div>
+      <div className={`${active ? 'text-[#10b981]' : 'opacity-60'} transition-all duration-300`}>{icon}</div>
       <span className="hidden sm:inline">{label}</span>
     </motion.button>
   );

@@ -5,12 +5,13 @@ A feature-rich input method prototype built with React, Vite, and Tailwind CSS. 
 ## 🚀 Features
 
 - **Multiple Layouts**: Instantly switch between QWERTY, AZERTY, and DVORAK right from the keyboard interface.
-- **AI-Powered Auto-Translation**: Integrates directly with the Gemini API to let you type in your native language, translate it on the fly, and send the translated text.
+- **Configurable Sizes**: Adjust the keyboard's height and key size dynamically in the Settings menu (Small, Medium, Large) for better ergonomics.
+- **AI-Powered Auto-Translation**: Integrates directly with the Gemini API to let you type in your native language, translate it on the fly, and send the translated text. You can easily toggle between typing directly and using real-time translation.
 - **Word Prediction**: Intelligent text prediction engine that suggests next words based on what you type.
 - **Clipboard History**: Built-in clipboard manager to save and access recently copied text.
 - **Emoji Picker**: Quick access to a full suite of emojis from a dedicated view.
 - **Undo/Redo Navigation**: Includes dedicated arrow controls, plus undo and redo buttons for precise cursor movement and edit history tracking.
-- **Advanced Controls**: Features a lockable `Ctrl` key, `Select All`, and customizable `App Shortcuts`.
+- **Advanced Controls**: Features a lockable `Ctrl` key, `Select All`, and fully manageable accelerator `App Shortcuts` (which you can add, reorder, or delete).
 - **Beautiful Themes**: Beautiful handcrafted design with multiple gorgeous themes: Onyx (default), OLED, Material Dark, Material Light, and Pastel Pink.
 
 ## 💻 Running Locally

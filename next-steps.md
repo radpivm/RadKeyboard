@@ -83,7 +83,9 @@ Did you see `@xml/method` in the code above? We need to create that file.
 You now have a blank, fully legitimate Android keyboard. The next chunk of work involves porting your React code to Android's UI system.
 *   **The UI**: You can't use raw CSS/HTML here. You will need to use Kotlin and **Jetpack Compose** (which feels very similar to React Components) to draw the Onyx theme, the rows of keys, and the buttons you made. 
 *   **The Logic**: When a user taps a key button in Kotlin, you grab the connection to whatever app they are typing in using `currentInputConnection.commitText("a", 1)` to send the letter "a" to their text message or search bar.
-*   **The Layouts**: You'll migrate your `LAYOUTS` (QWERTY, DVORAK) arrays into Kotlin variables.
+*   **The Layouts & Keyboard Sizing**: You'll migrate your `LAYOUTS` (QWERTY, DVORAK) arrays into Kotlin variables. Note that the layout sizes (Small, Medium, Large) should update layout modifiers in Jetpack Compose to adjust padding and height.
+*   **Settings & State**: To save features like custom App Shortcuts lists, themes, and size preferences, you should use `Jetpack DataStore` (Modern replacement for SharedPreferences) so changes persist after the keyboard is closed.
+*   **Gemini API Translation**: You will need to implement the official `generativeai` Android SDK from Google to pass the keyboard buffer to the API, grab the translation, and inject it inside the `commitText` target app.
 
 *Tip: For a beginner, use ChatGPT or Google's Gemini to help translate React components directly into Jetpack Compose UI code! Ask them: "How do I create a row of interactive buttons representing a keyboard row in Jetpack Compose?"*
 
