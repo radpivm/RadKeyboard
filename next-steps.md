@@ -1,0 +1,107 @@
+# Next Steps: Converting Radkeyboard into a Global Android Keyboard
+
+Right now, Radkeyboard v1.0 is a highly capable "prototype" built with web technologies (React/TypeScript). It runs perfectly in a browser, but Android systems do not let web apps act as global system keyboards. 
+
+To make your keyboard pop up globally in everyday apps (like Messages, WhatsApp, or Chrome on your phone), you need to natively rebuild the logic inside a specific Android framework called an `InputMethodService` using Android Studio. 
+
+Don't worry if you haven't done this before! Here is a beginner-friendly, step-by-step guide on how to migrate your web prototype into a real, installable Android `.apk`.
+
+---
+
+### Step 1: Download the Tools
+You need the official tool used by all Android developers.
+1. Download **Android Studio** for free from the official Google Developer website (developer.android.com/studio).
+2. Install it and open it up. Keep all the default settings.
+
+### Step 2: Start a New Android Project
+1. Open Android Studio and click **New Project**.
+2. Select **No Activity** (or "Empty Activity") because a keyboard usually doesn't need a normal app screen, it runs in the background.
+3. Name the application **Radkeyboard**.
+4. Set the Language to **Kotlin** (the recommended Android programming language).
+5. Click **Finish** and wait for Android Studio to set up the files.
+
+### Step 3: Create the Core Keyboard Service
+Android needs to know what code acts as the keyboard. The secret sauce is extending a class called `InputMethodService`.
+1. On the left sidebar, navigate to `app -> java -> com.yourname.radkeyboard`.
+2. Right-click that folder -> **New** -> **Kotlin Class/File**.
+3. Name it `RadkeyboardService`.
+4. Make the file look exactly like this:
+
+```kotlin
+package com.yourname.radkeyboard
+
+import android.inputmethodservice.InputMethodService
+import android.view.View
+
+class RadkeyboardService : InputMethodService() {
+    override fun onCreateInputView(): View {
+        // This is where you will eventually build and attach your keyboard's UI (buttons, keys)
+        // using Android XML Layouts or Jetpack Compose (Android's UI builder, similar to React).
+        // For a simple start, you would create a layout file named keyboard_view.xml
+        val mainKeyboardLayout = layoutInflater.inflate(R.layout.keyboard_view, null)
+        return mainKeyboardLayout
+    }
+}
+```
+
+### Step 4: Tell Android It's a Keyboard (The Manifest)
+You have to declare your new service in the app's master configuration file so Android knows it's a keyboard and not a regular app.
+1. On the left sidebar, open `app -> manifests -> AndroidManifest.xml`.
+2. Add your service inside the `<application>` tags:
+
+```xml
+<service
+    android:name=".RadkeyboardService"
+    android:label="Radkeyboard"
+    android:permission="android.permission.BIND_INPUT_METHOD"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.view.InputMethod" />
+    </intent-filter>
+    <meta-data
+        android:name="android.view.im"
+        android:resource="@xml/method" />
+</service>
+```
+
+### Step 5: Add Keyboard Metadata
+Did you see `@xml/method` in the code above? We need to create that file.
+1. On the left sidebar, find `app -> res`. Right-click `res` -> **New** -> **Android Resource Directory**. Name it `xml`.
+2. Right click your new `xml` folder -> **New** -> **XML Resource File**. Name it `method`.
+3. Put this code in it to declare the keyboard's subtypes:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<input-method xmlns:android="http://schemas.android.com/apk/res/android">
+    <subtype
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="keyboard" />
+</input-method>
+```
+
+### Step 6: Recreate the Design and Logic (The Big Step!)
+You now have a blank, fully legitimate Android keyboard. The next chunk of work involves porting your React code to Android's UI system.
+*   **The UI**: You can't use raw CSS/HTML here. You will need to use Kotlin and **Jetpack Compose** (which feels very similar to React Components) to draw the Onyx theme, the rows of keys, and the buttons you made. 
+*   **The Logic**: When a user taps a key button in Kotlin, you grab the connection to whatever app they are typing in using `currentInputConnection.commitText("a", 1)` to send the letter "a" to their text message or search bar.
+*   **The Layouts**: You'll migrate your `LAYOUTS` (QWERTY, DVORAK) arrays into Kotlin variables.
+
+*Tip: For a beginner, use ChatGPT or Google's Gemini to help translate React components directly into Jetpack Compose UI code! Ask them: "How do I create a row of interactive buttons representing a keyboard row in Jetpack Compose?"*
+
+### Step 7: Build the APK and Install on Your Phone
+Once everything is built:
+1. In Android Studio, go to the top menu bar.
+2. Click **Build** -> **Build Bundle(s) / APK(s)** -> **Build APK(s)**.
+3. Wait for the loading bar to finish. A popup will let you "Locate" the generated `.apk` file.
+4. Plug your phone into your PC, or upload the `.apk` file to Google Drive and download it on your phone.
+5. Tap it on your phone to Install.
+
+### Step 8: Enable It On Your Phone!
+Android disables new keyboards by default for security. 
+1. Open your phone's **Settings**.
+2. Search for **"On-screen keyboard"** or go to **System > Languages & input > On-screen keyboard**.
+3. Tap **Manage on-screen keyboards**.
+4. You will see **Radkeyboard** in the list! Toggle it on.
+5. Next time you type a message, tap the tiny keyboard icon in your phone's navigation bar to switch from Google Keyboard to the new Radkeyboard.
+
+---
+Congratulations! You've just built a system-level Android application from scratch.
