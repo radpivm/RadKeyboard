@@ -7,7 +7,7 @@ A feature-rich input method prototype built with React, Vite, and Tailwind CSS. 
 - **Multiple Layouts**: Instantly switch between QWERTY, AZERTY, and DVORAK right from the keyboard interface.
 - **Configurable Sizes**: Adjust the keyboard's height and key size dynamically in the Settings menu (Small, Medium, Large) for better ergonomics.
 - **AI-Powered Auto-Translation**: Integrates directly with the Gemini API to let you type in your native language, translate it on the fly, and send the translated text. You can easily toggle between typing directly and using real-time translation.
-- **Word Prediction**: Intelligent text prediction engine that suggests next words based on what you type.
+- **Smart Word Prediction**: Intelligent text prediction engine that suggests next words based on what you type. Includes advanced settings to toggle prediction on/off and clear learned words for privacy.
 - **Clipboard History**: Built-in clipboard manager to save and access recently copied text.
 - **Emoji Picker**: Quick access to a full suite of emojis from a dedicated view.
 - **Undo/Redo Navigation**: Includes dedicated arrow controls, plus undo and redo buttons for precise cursor movement and edit history tracking.

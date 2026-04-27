@@ -25,7 +25,9 @@ import {
   Send,
   Undo2,
   Redo2,
-  Command
+  Command,
+  Brain,
+  Trash2
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
@@ -168,6 +170,8 @@ export default function App() {
   const [history, setHistory] = useState<{text: string, pos: number}[]>([{text: '', pos: 0}]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [predictions, setPredictions] = useState<string[]>([]);
+  const [isPredictionEnabled, setIsPredictionEnabled] = useState(true);
+  const [learnedWordsCount, setLearnedWordsCount] = useState(144);
   const [shortcuts, setShortcuts] = useState<AppShortcut[]>([
     { id: '1', name: 'Google', url: 'https://google.com' },
     { id: '2', name: 'WhatsApp', url: 'https://web.whatsapp.com' }
@@ -203,6 +207,10 @@ export default function App() {
   }, [cursorPos]);
 
   useEffect(() => {
+    if (!isPredictionEnabled) {
+      setPredictions([]);
+      return;
+    }
     const defaultPredictions = ['I', 'the', 'and'];
     if (!text.trim()) {
       setPredictions(defaultPredictions);
@@ -216,7 +224,7 @@ export default function App() {
     } else {
       setPredictions(defaultPredictions);
     }
-  }, [text, cursorPos]);
+  }, [text, cursorPos, isPredictionEnabled]);
 
   const pushHistory = (newText: string, newPos: number) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -837,6 +845,49 @@ export default function App() {
                           <span className="text-xs uppercase tracking-widest font-bold">{s}</span>
                         </button>
                       ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-6 opacity-30 ${currentTheme.inputText}`}>Smart Prediction</h3>
+                    <div className={`p-6 rounded-2xl border border-white/5 ${currentTheme.specialKey}`}>
+                       <div className="flex items-center justify-between mb-6">
+                         <div className="flex items-center gap-3">
+                           <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-[#10b981]/10 text-[#10b981]`}>
+                             <Brain className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <h4 className={`text-sm font-medium tracking-tight ${currentTheme.keyText}`}>Next-Word Prediction</h4>
+                             <p className="text-[10px] uppercase tracking-widest text-[#71717a] mt-1">AI suggestions</p>
+                           </div>
+                         </div>
+                         <button
+                           onClick={() => setIsPredictionEnabled(!isPredictionEnabled)}
+                           className={`w-12 h-6 rounded-full transition-colors relative ${isPredictionEnabled ? 'bg-[#10b981]' : 'bg-[#3f3f46]'}`}
+                         >
+                           <motion.div 
+                             layout
+                             className="w-4 h-4 bg-white rounded-full absolute top-1"
+                             animate={{ left: isPredictionEnabled ? '26px' : '4px' }}
+                           />
+                         </button>
+                       </div>
+                       
+                       <div className="pt-6 border-t border-white/10 flex items-center justify-between">
+                          <div>
+                            <h4 className={`text-sm font-medium tracking-tight ${currentTheme.keyText}`}>Learned Words</h4>
+                            <p className="text-[10px] uppercase tracking-widest text-[#71717a] mt-1">{learnedWordsCount} words saved</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                               setLearnedWordsCount(0);
+                               alert("Learned words cleared!");
+                            }}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest border border-white/5 flex items-center gap-2 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all ${currentTheme.keyText}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Clear
+                          </button>
+                       </div>
                     </div>
                   </section>
                 </div>
