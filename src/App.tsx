@@ -27,7 +27,9 @@ import {
   Redo2,
   Command,
   Brain,
-  Trash2
+  Trash2,
+  Volume2,
+  Vibrate
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
@@ -126,6 +128,25 @@ const LAYOUTS: Record<KeyboardLayout, string[][]> = {
 
 const TRANSLATION_LANGUAGES = ['Spanish', 'French', 'German', 'Japanese', 'Chinese', 'Korean', 'Italian', 'Portuguese'];
 
+const playClickSound = () => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.02, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+    } catch(e) {}
+};
+
 const PREDICTIONS: Record<string, string[]> = {
   'i': ['am', 'have', 'think'],
   'how': ['are', 'is', 'much'],
@@ -172,6 +193,8 @@ export default function App() {
   const [predictions, setPredictions] = useState<string[]>([]);
   const [isPredictionEnabled, setIsPredictionEnabled] = useState(true);
   const [learnedWordsCount, setLearnedWordsCount] = useState(144);
+  const [isHapticEnabled, setIsHapticEnabled] = useState(true);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [shortcuts, setShortcuts] = useState<AppShortcut[]>([
     { id: '1', name: 'Google', url: 'https://google.com' },
     { id: '2', name: 'WhatsApp', url: 'https://web.whatsapp.com' }
@@ -265,7 +288,18 @@ export default function App() {
     pushHistory(newText, textBefore.length + newAddition.length);
   };
 
+  const triggerFeedback = () => {
+    if (isHapticEnabled && navigator.vibrate) {
+      navigator.vibrate(5);
+    }
+    if (isSoundEnabled) {
+      playClickSound();
+    }
+  };
+
   const handleKeyPress = async (key: string) => {
+    triggerFeedback();
+    
     let newText = text;
     let newPos = cursorPos;
 
@@ -318,9 +352,27 @@ export default function App() {
         newPos = cursorPos + 1;
       }
     } else {
-      const char = isShift ? key.toUpperCase() : key.toLowerCase();
-      newText = text.slice(0, cursorPos) + char + text.slice(cursorPos);
-      newPos = cursorPos + char.length;
+      let char = isShift ? key.toUpperCase() : key.toLowerCase();
+      
+      const textBefore = text.slice(0, cursorPos);
+      const isStartOfSentence = textBefore.length === 0 || /(?:^|[.?!]\s+|\n)$/.test(textBefore);
+      
+      if (key === ' ') {
+         if (textBefore.endsWith(' ') && !textBefore.endsWith('  ') && textBefore.length > 1 && /[A-Za-z0-9] $/.test(textBefore)) {
+             newText = text.slice(0, cursorPos - 1) + '. ' + text.slice(cursorPos);
+             newPos = cursorPos + 1;
+         } else {
+             newText = text.slice(0, cursorPos) + ' ' + text.slice(cursorPos);
+             newPos = cursorPos + 1;
+         }
+      } else {
+         if (isStartOfSentence && /^[a-z]$/i.test(key)) {
+             char = key.toUpperCase();
+         }
+         newText = text.slice(0, cursorPos) + char + text.slice(cursorPos);
+         newPos = cursorPos + char.length;
+      }
+      
       if (isShift) setIsShift(false);
     }
 
@@ -887,6 +939,55 @@ export default function App() {
                           >
                             <Trash2 className="w-3.5 h-3.5" /> Clear
                           </button>
+                       </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-6 opacity-30 ${currentTheme.inputText}`}>Feedback & Experience</h3>
+                    <div className={`p-6 rounded-2xl border border-white/5 ${currentTheme.specialKey} space-y-6`}>
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white/70`}>
+                             <Volume2 className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <h4 className={`text-sm font-medium tracking-tight ${currentTheme.keyText}`}>Keypress Sounds</h4>
+                             <p className="text-[10px] uppercase tracking-widest text-[#71717a] mt-1">Audio feedback</p>
+                           </div>
+                         </div>
+                         <button
+                           onClick={() => setIsSoundEnabled(!isSoundEnabled)}
+                           className={`w-12 h-6 rounded-full transition-colors relative ${isSoundEnabled ? 'bg-[#10b981]' : 'bg-[#3f3f46]'}`}
+                         >
+                           <motion.div 
+                             layout
+                             className="w-4 h-4 bg-white rounded-full absolute top-1"
+                             animate={{ left: isSoundEnabled ? '26px' : '4px' }}
+                           />
+                         </button>
+                       </div>
+                       
+                       <div className="pt-6 border-t border-white/10 flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white/70`}>
+                             <Vibrate className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <h4 className={`text-sm font-medium tracking-tight ${currentTheme.keyText}`}>Haptic Feedback</h4>
+                             <p className="text-[10px] uppercase tracking-widest text-[#71717a] mt-1">Vibration on tap</p>
+                           </div>
+                         </div>
+                         <button
+                           onClick={() => setIsHapticEnabled(!isHapticEnabled)}
+                           className={`w-12 h-6 rounded-full transition-colors relative ${isHapticEnabled ? 'bg-[#10b981]' : 'bg-[#3f3f46]'}`}
+                         >
+                           <motion.div 
+                             layout
+                             className="w-4 h-4 bg-white rounded-full absolute top-1"
+                             animate={{ left: isHapticEnabled ? '26px' : '4px' }}
+                           />
+                         </button>
                        </div>
                     </div>
                   </section>
